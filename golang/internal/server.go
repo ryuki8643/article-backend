@@ -41,11 +41,46 @@ func allTitle(c *gin.Context) {
 	c.JSON(http.StatusOK, titles)
 }
 
+func addNewArticle(c *gin.Context) {
+	var json ReceiveJson
+	if err := c.ShouldBindJSON(&json); err != nil {
+		c.JSONP(http.StatusBadRequest, gin.H{
+			"message": "invalid json scheme",
+		})
+	}
+	if err := InsertNewArticle(json); err != nil {
+		c.JSONP(http.StatusBadRequest, gin.H{
+			"message": "db error",
+		})
+	} else {
+		c.JSON(http.StatusOK, json)
+	}
+
+}
+
+func editArticle(c *gin.Context) {
+	var json ReceiveJson
+	if err := c.ShouldBindJSON(&json); err != nil {
+		c.JSONP(http.StatusBadRequest, gin.H{
+			"message": "invalid json scheme",
+		})
+	}
+	if err := EditArticle(c.Param("article_id"), json); err != nil {
+		c.JSONP(http.StatusBadRequest, gin.H{
+			"message": "db error",
+		})
+	} else {
+		c.JSON(http.StatusOK, json)
+	}
+
+}
 func NewHTTPServer() {
 	r := gin.Default()
 	r.GET("/db", getAllArticles)
 	r.GET("/article", allTitle)
+	r.POST("/article", addNewArticle)
 	r.GET("/article/:article_id", getOneArticle)
+	r.POST("/article/:article_id")
 	r.GET("/", hello)
 
 	r.Run()
