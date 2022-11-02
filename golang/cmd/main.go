@@ -1,16 +1,9 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
+	server "github.com/ryuki8643/article-backend/internal"
 )
 
-func hello(w http.ResponseWriter, _ *http.Request) {
-
-	fmt.Fprint(w, "Hello World")
-}
-
 func main() {
-	http.HandleFunc("/", hello)
-	http.ListenAndServe(":8000", nil)
+	server.NewHTTPServer()
 }

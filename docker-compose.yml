@@ -4,7 +4,7 @@ services:
     container_name: go-backend
     build: ./golang
     ports:
-      - "8000:8000"
+      - "8080:8080"
     tty: true
 
 
@@ -28,7 +28,10 @@ services:
       - "5432:5432"
     container_name: postgres
     volumes:
-      - "pgwebdb-data:/var/lib/postgresql/data"
+      - pgwebdb-data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d
+    tty: true
 volumes:
   pgwebdb-data:
+    name: pg_backend
     driver: local

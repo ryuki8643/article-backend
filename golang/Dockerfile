@@ -5,11 +5,11 @@ WORKDIR ${ROOT}
 
 RUN apk update && apk add git
 
-COPY ./cmd/main.go ${ROOT}
-
-COPY go.mod ${ROOT}
+COPY . ${ROOT}
 
 RUN go mod tidy
 
+EXPOSE 8080
 
-CMD ["go", "run", "main.go"]
+
+CMD ["go", "run", "cmd/main.go"]
