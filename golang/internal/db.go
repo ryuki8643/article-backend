@@ -6,6 +6,10 @@ import (
 	_ "github.com/lib/pq"
 )
 
+type Message struct {
+	Message string `json:"message"`
+}
+
 type Titles struct {
 	ArticleID int    `json:"id"`
 	Title     string `json:"title"`
@@ -17,10 +21,11 @@ type ReceiveJson struct {
 	Author  string `json:"author"`
 }
 
-type ARTICLE struct {
-	Titles
-	Content string `json:"content"`
-	Author  string `json:"author"`
+type Article struct {
+	ArticleID string `json:"id"`
+	Title     string `json:"title"`
+	Content   string `json:"content"`
+	Author    string `json:"author"`
 }
 
 const (
@@ -42,7 +47,7 @@ func dbOpen() (*sql.DB, error) {
 	return db, err
 }
 
-func SelectAllArticle() ([]ARTICLE, error) {
+func SelectAllArticle() ([]Article, error) {
 	db, err := dbOpen()
 	defer db.Close()
 	rows, err := db.Query("select * from articles")
@@ -51,10 +56,10 @@ func SelectAllArticle() ([]ARTICLE, error) {
 		return nil, err
 	}
 
-	var result []ARTICLE
+	var result []Article
 
 	for rows.Next() {
-		var article ARTICLE
+		var article Article
 		rows.Scan(&article.ArticleID, &article.Title, &article.Content, &article.Author)
 		result = append(result, article)
 
@@ -62,18 +67,18 @@ func SelectAllArticle() ([]ARTICLE, error) {
 	return result, err
 }
 
-func SelectOneArticle(articleId string) (ARTICLE, error) {
+func SelectOneArticle(articleId string) (Article, error) {
 	db, err := dbOpen()
 	if err != nil {
-		return ARTICLE{}, err
+		return Article{}, err
 	}
 	defer db.Close()
-	var article ARTICLE
+	var article Article
 
 	err = db.QueryRow("select * from articles where article_id = $1", articleId).Scan(&article.ArticleID, &article.Title, &article.Content, &article.Author)
 	if err != nil {
 
-		return ARTICLE{}, err
+		return Article{}, err
 	}
 	return article, nil
 }

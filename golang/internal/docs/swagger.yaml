@@ -1,0 +1,144 @@
+definitions:
+  server.Article:
+    properties:
+      author:
+        type: string
+      content:
+        type: string
+      id:
+        type: string
+      title:
+        type: string
+    type: object
+  server.Message:
+    properties:
+      message:
+        type: string
+    type: object
+  server.ReceiveJson:
+    properties:
+      author:
+        type: string
+      content:
+        type: string
+      title:
+        type: string
+    type: object
+  server.Titles:
+    properties:
+      id:
+        type: integer
+      title:
+        type: string
+    type: object
+info:
+  contact: {}
+  license:
+    name: ryuki
+  title: article_api
+  version: "2.0"
+paths:
+  /:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.Message'
+      summary: helloを返す
+      tags:
+      - helloWorld
+  /article:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.Titles'
+      summary: 全ての記事のidとtitleを返す
+      tags:
+      - article
+    post:
+      parameters:
+      - description: Article Json
+        in: body
+        name: article_json
+        required: true
+        schema:
+          $ref: '#/definitions/server.ReceiveJson'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.Article'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/server.Message'
+      summary: 新しい記事の投稿
+      tags:
+      - article
+  /article/{article_id}:
+    get:
+      parameters:
+      - description: Article ID
+        in: path
+        name: article_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.Article'
+      summary: urlパラメータで指定された番号の記事を出力
+      tags:
+      - article
+    post:
+      parameters:
+      - description: Article ID
+        in: path
+        name: article_id
+        required: true
+        type: integer
+      - description: Article Json
+        in: body
+        name: article_json
+        required: true
+        schema:
+          $ref: '#/definitions/server.ReceiveJson'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.Article'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/server.Message'
+      summary: 既存の記事を編集
+      tags:
+      - article
+  /db:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.Article'
+      summary: 全ての記事のデータを返す
+      tags:
+      - article
+swagger: "2.0"
