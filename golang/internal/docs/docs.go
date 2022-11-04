@@ -38,20 +38,23 @@ const docTemplate = `{
                 }
             }
         },
-        "/article": {
+        "/articles": {
             "get": {
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "article"
+                    "db"
                 ],
-                "summary": "全ての記事のidとtitleを返す",
+                "summary": "全ての記事のデータを返す",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/server.Titles"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/server.Title"
+                            }
                         }
                     }
                 }
@@ -71,7 +74,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/server.ReceiveJson"
+                            "$ref": "#/definitions/server.ArticleAllSteps"
                         }
                     }
                 ],
@@ -79,7 +82,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/server.Article"
+                            "$ref": "#/definitions/server.Message"
                         }
                     },
                     "400": {
@@ -91,7 +94,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/article/{article_id}": {
+        "/articles/{article_id}": {
             "get": {
                 "produces": [
                     "application/json"
@@ -113,19 +116,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/server.Article"
+                            "$ref": "#/definitions/server.ArticleAllSteps"
                         }
                     }
                 }
             },
-            "post": {
+            "put": {
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "article"
                 ],
-                "summary": "既存の記事を編集",
+                "summary": "記事の編集",
                 "parameters": [
                     {
                         "type": "integer",
@@ -140,7 +143,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/server.ReceiveJson"
+                            "$ref": "#/definitions/server.ArticleAllSteps"
                         }
                     }
                 ],
@@ -148,7 +151,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/server.Article"
+                            "$ref": "#/definitions/server.Message"
                         }
                     },
                     "400": {
@@ -160,7 +163,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/db": {
+        "/articles/{article_id}/{step_id}": {
             "get": {
                 "produces": [
                     "application/json"
@@ -168,12 +171,81 @@ const docTemplate = `{
                 "tags": [
                     "article"
                 ],
-                "summary": "全ての記事のデータを返す",
+                "summary": "urlパラメータで指定された記事のステップを出力",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Article ID",
+                        "name": "article_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Step ID",
+                        "name": "step_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/server.Article"
+                            "$ref": "#/definitions/server.ArticleOneStep"
+                        }
+                    }
+                }
+            }
+        },
+        "/likes/{article_id}": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "like"
+                ],
+                "summary": "いいね数の追加",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Article ID",
+                        "name": "article_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/server.Message"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.Message"
+                        }
+                    }
+                }
+            }
+        },
+        "/swagger": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "helloWorld"
+                ],
+                "summary": "/swagger/index.html#/にアクセスするとswaggerを返す",
+                "responses": {
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.Message"
                         }
                     }
                 }
@@ -181,19 +253,50 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "server.Article": {
+        "server.ArticleAllSteps": {
             "type": "object",
             "properties": {
                 "author": {
                     "type": "string"
                 },
-                "content": {
+                "likes": {
                     "type": "string"
                 },
-                "id": {
-                    "type": "string"
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/server.Step"
+                    }
                 },
                 "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.ArticleOneStep": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "likes": {
+                    "type": "string"
+                },
+                "step": {
+                    "$ref": "#/definitions/server.Step"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.Code": {
+            "type": "object",
+            "properties": {
+                "code_content": {
+                    "type": "string"
+                },
+                "code_file_name": {
                     "type": "string"
                 }
             }
@@ -206,24 +309,30 @@ const docTemplate = `{
                 }
             }
         },
-        "server.ReceiveJson": {
+        "server.Step": {
             "type": "object",
             "properties": {
-                "author": {
-                    "type": "string"
+                "codes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/server.Code"
+                    }
                 },
                 "content": {
-                    "type": "string"
-                },
-                "title": {
                     "type": "string"
                 }
             }
         },
-        "server.Titles": {
+        "server.Title": {
             "type": "object",
             "properties": {
-                "id": {
+                "articleId": {
+                    "type": "string"
+                },
+                "author": {
+                    "type": "string"
+                },
+                "likes": {
                     "type": "integer"
                 },
                 "title": {

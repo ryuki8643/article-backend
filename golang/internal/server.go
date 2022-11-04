@@ -1,9 +1,9 @@
 package server
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
+	"log"
+	"strconv"
 
 	_ "github.com/ryuki8643/article-backend/internal/docs"
 	swaggerFiles "github.com/swaggo/files"
@@ -25,31 +25,36 @@ func hello(c *gin.Context) {
 
 // GetAllArticles ...
 // @Summary 全ての記事のデータを返す
-// @Tags article
+// @Tags db
 // @Produce  json
-// @Success 200 {object} Article
-// @Router /db [get]
+// @Success 200 {array} Title
+// @Router /articles [get]
 func getAllArticles(c *gin.Context) {
 	articles, err := SelectAllArticle()
 	if err != nil {
-		fmt.Println(err)
+		log.Printf("%+v", err)
+		c.JSONP(http.StatusBadRequest, gin.H{
+			"message": err.Error(),
+		})
+	} else {
+		c.JSON(http.StatusOK, articles)
 	}
-	c.JSON(http.StatusOK, articles)
 }
 
-// GetOneArticles ...
+// GetOneArticle ...
 // @Summary urlパラメータで指定された番号の記事を出力
 // @Tags article
 // @Produce  json
 // @Param article_id path int true "Article ID"
-// @Success 200 {object} Article
-// @Router /article/{article_id} [get]
+// @Success 200 {object} ArticleAllSteps
+// @Router /articles/{article_id} [get]
 func getOneArticle(c *gin.Context) {
 
 	article, err := SelectOneArticle(c.Param("article_id"))
 	if err != nil {
+		log.Printf("%+v", err)
 		c.JSONP(http.StatusBadRequest, gin.H{
-			"message": "no_content",
+			"message": err.Error(),
 		})
 	} else {
 		c.JSON(http.StatusOK, article)
@@ -57,69 +62,160 @@ func getOneArticle(c *gin.Context) {
 
 }
 
-// allTitle ...
-// @Summary 全ての記事のidとtitleを返す
+// GetOneArticleStep ...
+// @Summary urlパラメータで指定された記事のステップを出力
 // @Tags article
 // @Produce  json
-// @Success 200 {object} Titles
-// @Router /article [get]
-func allTitle(c *gin.Context) {
-	titles, err := SelectAllTitleAndID()
+// @Param article_id path int true "Article ID"
+// @Param step_id path int true "Step ID"
+// @Success 200 {object} ArticleOneStep
+// @Router /articles/{article_id}/{step_id} [get]
+func getOneArticleStep(c *gin.Context) {
+
+	article, err := SelectOneArticleStep(c.Param("article_id"), c.Param("step_id"))
 	if err != nil {
-		fmt.Println(err)
+		log.Printf("%+v", err)
+		c.JSONP(http.StatusBadRequest, gin.H{
+			"message": err.Error(),
+		})
+	} else {
+		c.JSON(http.StatusOK, article)
 	}
-	c.JSON(http.StatusOK, titles)
+
+}
+
+func insertArticleTest(c *gin.Context) {
+	p := ArticleAllSteps{Author: "a", Title: "b", Steps: []Step{{Content: "content", Codes: []Code{{CodeContent: "ss", CodeFileName: "cc"}}}}}
+	err := AddNewArticle(p)
+	if err != nil {
+		log.Printf("%+v", err)
+	}
+	getAllArticles(c)
+}
+
+func EditArticleTest(c *gin.Context) {
+	p := ArticleAllSteps{Author: "penguin", Title: "penguin", Steps: []Step{{Content: "content", Codes: []Code{{CodeContent: "ss", CodeFileName: "cc"}}}}}
+
+	i, err := strconv.Atoi(c.Param("article_id"))
+	if err != nil {
+		log.Printf("%+v", err)
+		c.JSONP(http.StatusBadRequest, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	err = EditArticle(p, i)
+	if err != nil {
+		log.Printf("%+v", err)
+		c.JSONP(http.StatusBadRequest, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	getAllArticles(c)
 }
 
 // AddNewArticle ...
 // @Summary 新しい記事の投稿
 // @Tags article
 // @Produce  json
-// @Param article_json body ReceiveJson true "Article Json"
-// @Success 200 {object} Article
+// @Param article_json body ArticleAllSteps true "Article Json"
+// @Success 200 {object} Message
 // @Failure 400 {object} Message
-// @Router /article [post]
-func addNewArticle(c *gin.Context) {
-	var json ReceiveJson
-	if err := c.ShouldBindJSON(&json); err != nil {
+// @Router /articles [post]
+func insertNewArticle(c *gin.Context) {
+	var postJson ArticleAllSteps
+	if err := c.ShouldBindJSON(&postJson); err != nil {
+		log.Printf("%+v", err)
 		c.JSONP(http.StatusBadRequest, gin.H{
-			"message": "invalid json scheme",
+			"message": err.Error(),
 		})
+		return
 	}
-	if err := InsertNewArticle(json); err != nil {
+	err := AddNewArticle(postJson)
+	if err != nil {
 		c.JSONP(http.StatusBadRequest, gin.H{
-			"message": "db error",
+			"message": err.Error(),
 		})
-	} else {
-		c.JSON(http.StatusOK, json)
+		log.Printf("%+v", err)
+		return
 	}
 
+	c.JSONP(http.StatusOK, gin.H{
+		"message": "post completed",
+	})
 }
 
-// EditArticle...
-// @Summary 既存の記事を編集
+// EditArticle ...
+// @Summary 記事の編集
 // @Tags article
 // @Produce  json
 // @Param article_id path int true "Article ID"
-// @Param article_json body ReceiveJson true "Article Json"
-// @Success 200 {object} Article
+// @Param article_json body ArticleAllSteps true "Article Json"
+// @Success 200 {object} Message
 // @Failure 400 {object} Message
-// @Router /article/{article_id} [post]
+// @Router /articles/{article_id} [put]
 func editArticle(c *gin.Context) {
-	var json ReceiveJson
-	if err := c.ShouldBindJSON(&json); err != nil {
+	var postJson ArticleAllSteps
+	if err := c.ShouldBindJSON(&postJson); err != nil {
+		log.Printf("%+v", err)
 		c.JSONP(http.StatusBadRequest, gin.H{
-			"message": "invalid json scheme",
+			"message": err.Error(),
 		})
+		return
 	}
-	if err := EditArticle(c.Param("article_id"), json); err != nil {
+	i, err := strconv.Atoi(c.Param("article_id"))
+	if err != nil {
+		log.Printf("%+v", err)
 		c.JSONP(http.StatusBadRequest, gin.H{
-			"message": "db error",
+			"message": err.Error(),
 		})
-	} else {
-		c.JSON(http.StatusOK, json)
+		return
+	}
+	err = EditArticle(postJson, i)
+	if err != nil {
+		log.Printf("%+v", err)
+		c.JSONP(http.StatusBadRequest, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	c.JSONP(http.StatusOK, gin.H{
+		"message": "put completed",
+	})
+}
+
+// LikesArticle ...
+// @Summary いいね数の追加
+// @Tags like
+// @Produce  json
+// @Param article_id path int true "Article ID"
+// @Success 200 {object} Message
+// @Failure 400 {object} Message
+// @Router /likes/{article_id} [put]
+func LikesArticle(c *gin.Context) {
+	err := AddLike(c.Param("article_id"))
+	if err != nil {
+		c.JSONP(http.StatusBadRequest, gin.H{
+			"message": err.Error(),
+		})
+		log.Printf("%+v", err)
+		return
 	}
 
+	c.JSONP(http.StatusOK, gin.H{
+		"message": "put completed",
+	})
+}
+
+// Swagger ...
+// @Summary /swagger/index.html#/にアクセスするとswaggerを返す
+// @Tags helloWorld
+// @Produce  json
+// @Failure 400 {object} Message
+// @Router /swagger [get]
+func ginSwaggerDoc() func(c *gin.Context) {
+	return ginSwagger.WrapHandler(swaggerFiles.Handler)
 }
 
 // @title article_api
@@ -127,13 +223,21 @@ func editArticle(c *gin.Context) {
 // @license.name ryuki
 func NewHTTPServer() {
 	r := gin.Default()
-	r.GET("/db", getAllArticles)
-	r.GET("/article", allTitle)
-	r.POST("/article", addNewArticle)
-	r.GET("/article/:article_id", getOneArticle)
-	r.POST("/article/:article_id")
+	r.Use(ZapLogger)
+	r.GET("/articles", getAllArticles)
+	r.GET("/articles/:article_id", getOneArticle)
+	r.GET("/articles/:article_id/:step_id", getOneArticleStep)
+
+	r.POST("/articles", insertNewArticle)
+	r.PUT("/articles/:article_id", editArticle)
+
+	r.GET("/likes/:article_id", LikesArticle)
+
+	r.GET("/check/post", insertArticleTest)
+	r.GET("/check/put/:article_id", EditArticleTest)
+
 	r.GET("/", hello)
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	r.GET("/swagger/*any", ginSwaggerDoc())
 
 	r.Run()
 }

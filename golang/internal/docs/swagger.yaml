@@ -1,13 +1,33 @@
 definitions:
-  server.Article:
+  server.ArticleAllSteps:
     properties:
       author:
         type: string
-      content:
+      likes:
         type: string
-      id:
-        type: string
+      steps:
+        items:
+          $ref: '#/definitions/server.Step'
+        type: array
       title:
+        type: string
+    type: object
+  server.ArticleOneStep:
+    properties:
+      author:
+        type: string
+      likes:
+        type: string
+      step:
+        $ref: '#/definitions/server.Step'
+      title:
+        type: string
+    type: object
+  server.Code:
+    properties:
+      code_content:
+        type: string
+      code_file_name:
         type: string
     type: object
   server.Message:
@@ -15,18 +35,22 @@ definitions:
       message:
         type: string
     type: object
-  server.ReceiveJson:
+  server.Step:
     properties:
-      author:
-        type: string
+      codes:
+        items:
+          $ref: '#/definitions/server.Code'
+        type: array
       content:
         type: string
-      title:
-        type: string
     type: object
-  server.Titles:
+  server.Title:
     properties:
-      id:
+      articleId:
+        type: string
+      author:
+        type: string
+      likes:
         type: integer
       title:
         type: string
@@ -50,7 +74,7 @@ paths:
       summary: helloを返す
       tags:
       - helloWorld
-  /article:
+  /articles:
     get:
       produces:
       - application/json
@@ -58,10 +82,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/server.Titles'
-      summary: 全ての記事のidとtitleを返す
+            items:
+              $ref: '#/definitions/server.Title'
+            type: array
+      summary: 全ての記事のデータを返す
       tags:
-      - article
+      - db
     post:
       parameters:
       - description: Article Json
@@ -69,14 +95,14 @@ paths:
         name: article_json
         required: true
         schema:
-          $ref: '#/definitions/server.ReceiveJson'
+          $ref: '#/definitions/server.ArticleAllSteps'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/server.Article'
+            $ref: '#/definitions/server.Message'
         "400":
           description: Bad Request
           schema:
@@ -84,7 +110,7 @@ paths:
       summary: 新しい記事の投稿
       tags:
       - article
-  /article/{article_id}:
+  /articles/{article_id}:
     get:
       parameters:
       - description: Article ID
@@ -98,11 +124,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/server.Article'
+            $ref: '#/definitions/server.ArticleAllSteps'
       summary: urlパラメータで指定された番号の記事を出力
       tags:
       - article
-    post:
+    put:
       parameters:
       - description: Article ID
         in: path
@@ -114,31 +140,76 @@ paths:
         name: article_json
         required: true
         schema:
-          $ref: '#/definitions/server.ReceiveJson'
+          $ref: '#/definitions/server.ArticleAllSteps'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/server.Article'
+            $ref: '#/definitions/server.Message'
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/server.Message'
-      summary: 既存の記事を編集
+      summary: 記事の編集
       tags:
       - article
-  /db:
+  /articles/{article_id}/{step_id}:
     get:
+      parameters:
+      - description: Article ID
+        in: path
+        name: article_id
+        required: true
+        type: integer
+      - description: Step ID
+        in: path
+        name: step_id
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/server.Article'
-      summary: 全ての記事のデータを返す
+            $ref: '#/definitions/server.ArticleOneStep'
+      summary: urlパラメータで指定された記事のステップを出力
       tags:
       - article
+  /likes/{article_id}:
+    put:
+      parameters:
+      - description: Article ID
+        in: path
+        name: article_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.Message'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/server.Message'
+      summary: いいね数の追加
+      tags:
+      - like
+  /swagger:
+    get:
+      produces:
+      - application/json
+      responses:
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/server.Message'
+      summary: /swagger/index.html#/にアクセスするとswaggerを返す
+      tags:
+      - helloWorld
 swagger: "2.0"
