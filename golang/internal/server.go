@@ -1,8 +1,6 @@
 package server
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 
 	_ "github.com/ryuki8643/article-backend/internal/docs"
@@ -32,9 +30,32 @@ func hello(c *gin.Context) {
 func getAllArticles(c *gin.Context) {
 	articles, err := SelectAllArticle()
 	if err != nil {
-		fmt.Println(err)
+		c.JSONP(http.StatusBadRequest, gin.H{
+			"message": err.Error(),
+		})
+	} else {
+		c.JSON(http.StatusOK, articles)
 	}
-	c.JSON(http.StatusOK, articles)
+}
+
+// GetOneArticles ...
+// @Summary urlパラメータで指定された番号の記事を出力
+// @Tags article
+// @Produce  json
+// @Param article_id path int true "Article ID"
+// @Success 200 {object} Article
+// @Router /article/{article_id}/{step_id} [get]
+func getOneArticleStep(c *gin.Context) {
+
+	article, err := SelectOneArticleStep(c.Param("article_id"), c.Param("step_id"))
+	if err != nil {
+		c.JSONP(http.StatusBadRequest, gin.H{
+			"message": err.Error(),
+		})
+	} else {
+		c.JSON(http.StatusOK, article)
+	}
+
 }
 
 // GetOneArticles ...
@@ -46,10 +67,10 @@ func getAllArticles(c *gin.Context) {
 // @Router /article/{article_id} [get]
 func getOneArticle(c *gin.Context) {
 
-	article, err := SelectOneArticleStep(c.Param("article_id"), c.Param("step_id"))
+	article, err := SelectOneArticle(c.Param("article_id"))
 	if err != nil {
 		c.JSONP(http.StatusBadRequest, gin.H{
-			"message": "no_content",
+			"message": err.Error(),
 		})
 	} else {
 		c.JSON(http.StatusOK, article)
@@ -63,8 +84,8 @@ func getOneArticle(c *gin.Context) {
 func NewHTTPServer() {
 	r := gin.Default()
 	r.GET("/article", getAllArticles)
-
-	r.GET("/article/:article_id/:step_id", getOneArticle)
+	r.GET("/article/:article_id", getOneArticle)
+	r.GET("/article/:article_id/:step_id", getOneArticleStep)
 
 	r.GET("/", hello)
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

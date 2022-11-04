@@ -18,14 +18,21 @@ type Title struct {
 	Likes     int    `json:"likes"`
 }
 
-type Article struct {
+type ArticleAllSteps struct {
 	Title  string `json:"title"`
 	Author string `json:"author"`
 	Steps  []Step
 }
 
+type ArticleOneStep struct {
+	Title  string `json:"title"`
+	Author string `json:"author"`
+	Step   Step
+}
+
 type Step struct {
-	Codes []Code
+	Content string `json:"content"`
+	Codes   []Code
 }
 
 type Code struct {
@@ -65,31 +72,37 @@ func SelectAllArticle() ([]Title, error) {
 
 	for rows.Next() {
 		var title Title
-		rows.Scan(&title.ArticleId, &title.Title, &title.Author, &title.Author)
+		err = rows.Scan(&title.ArticleId, &title.Title, &title.Author, &title.Author)
+		if err != nil {
+			log.Println(err)
+		}
 		result = append(result, title)
 
 	}
 	return result, err
 }
 
-func SelectOneArticleStep(articleId, stepId string) (Article, error) {
+func SelectOneArticle(articleId string) (ArticleAllSteps, error) {
 	db, err := dbOpen()
 	if err != nil {
-		return Article{}, err
+		log.Println(err)
+		return ArticleAllSteps{}, err
 	}
 	defer db.Close()
-	var article Article
+	var article ArticleAllSteps
 	err = db.QueryRow("select title,author from articles where article_id=$1", articleId).Scan(&article.Title, &article.Author)
 	if err != nil {
-		return Article{}, err
+		log.Println(err)
+		return ArticleAllSteps{}, err
 	}
-	rows, err := db.Query(`select step_id,code_id,code_file_name,code_content from 
-		(select title,author,step_primary_key,step_id,articles.article_id from articles
-		join steps on articles.article_id = steps.article_id where articles.article_id=$1 and steps.step_id=$2) as article_steps 
-		join codes on article_steps.step_primary_key = codes.step_primary_key`, articleId, stepId)
+	rows, err := db.Query(`select step_id,code_id,code_file_name,code_content,article_content from 
+		(select title,author,step_primary_key,step_id,articles.article_id,article_content from articles
+		join steps on articles.article_id = steps.article_id where articles.article_id=$1) as article_steps 
+		join codes on article_steps.step_primary_key = codes.step_primary_key`, articleId)
 
 	if err != nil {
-		return Article{}, err
+		log.Println(err)
+		return ArticleAllSteps{}, err
 	}
 	var steps []Step
 
@@ -98,18 +111,68 @@ func SelectOneArticleStep(articleId, stepId string) (Article, error) {
 		var codeId int
 		var codeFileName string
 		var codeContent string
-		rows.Scan(&stepId, &codeId, &codeFileName, &codeContent)
+		var articleContent string
+
+		err = rows.Scan(&stepId, &codeId, &codeFileName, &codeContent, &articleContent)
+		if err != nil {
+			log.Println(err)
+			return ArticleAllSteps{}, err
+		}
 		log.Println("データベースより取得", stepId, codeId, codeFileName, codeContent)
 		if len(steps) > stepId {
 			code := Code{CodeContent: codeContent, CodeFileName: codeFileName}
 			steps[stepId].Codes = append(steps[stepId].Codes, code)
 		} else {
 			code := Code{CodeContent: codeContent, CodeFileName: codeFileName}
-			step := Step{Codes: []Code{code}}
+			step := Step{Codes: []Code{code}, Content: articleContent}
 			steps = append(steps, step)
 		}
 	}
 	article.Steps = steps
+
+	return article, nil
+}
+
+func SelectOneArticleStep(articleId, stepId string) (ArticleOneStep, error) {
+	db, err := dbOpen()
+	if err != nil {
+		log.Println(err)
+		return ArticleOneStep{}, err
+	}
+	defer db.Close()
+	var article ArticleOneStep
+	err = db.QueryRow("select title,author from articles where article_id=$1", articleId).Scan(&article.Title, &article.Author)
+	if err != nil {
+		log.Println(err)
+		return ArticleOneStep{}, err
+	}
+	rows, err := db.Query(`select code_id,code_file_name,code_content,article_content from 
+		(select title,author,step_primary_key,step_id,articles.article_id,article_content from articles
+		join steps on articles.article_id = steps.article_id where articles.article_id=$1 and steps.step_id=$2) as article_steps 
+		join codes on article_steps.step_primary_key = codes.step_primary_key`, articleId, stepId)
+
+	if err != nil {
+		log.Println(err)
+		return ArticleOneStep{}, err
+	}
+	var codes []Code
+	var articleContent string
+	for rows.Next() {
+		var codeId int
+		var codeFileName string
+		var codeContent string
+
+		err = rows.Scan(&codeId, &codeFileName, &codeContent, &articleContent)
+		if err != nil {
+			log.Println(err)
+			return ArticleOneStep{}, err
+		}
+		log.Println("データベースより取得", stepId, codeId, codeFileName, codeContent)
+		code := Code{CodeContent: codeContent, CodeFileName: codeFileName}
+		codes = append(codes, code)
+
+	}
+	article.Step = Step{Codes: codes, Content: articleContent}
 
 	return article, nil
 }
