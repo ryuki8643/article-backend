@@ -6,6 +6,7 @@ create table if not exists articles
     article_id int,
     title text default 'no_title',
     author text default 'no_auther',
+    likes int default 0,
     primary key (article_id)
     );
 

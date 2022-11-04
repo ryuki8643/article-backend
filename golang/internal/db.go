@@ -4,28 +4,33 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
+	"log"
 )
 
 type Message struct {
 	Message string `json:"message"`
 }
 
-type Titles struct {
-	ArticleID int    `json:"id"`
+type Title struct {
+	ArticleId string `json:"articleId"`
 	Title     string `json:"title"`
-}
-
-type ReceiveJson struct {
-	Title   string `json:"title"`
-	Content string `json:"content"`
-	Author  string `json:"author"`
+	Author    string `json:"author"`
+	Likes     int    `json:"likes"`
 }
 
 type Article struct {
-	ArticleID string `json:"id"`
-	Title     string `json:"title"`
-	Content   string `json:"content"`
-	Author    string `json:"author"`
+	Title  string `json:"title"`
+	Author string `json:"author"`
+	Steps  []Step
+}
+
+type Step struct {
+	Codes []Code
+}
+
+type Code struct {
+	CodeFileName string `json:"code_file_name"`
+	CodeContent  string `json:"code_content"`
 }
 
 const (
@@ -47,104 +52,64 @@ func dbOpen() (*sql.DB, error) {
 	return db, err
 }
 
-func SelectAllArticle() ([]Article, error) {
+func SelectAllArticle() ([]Title, error) {
 	db, err := dbOpen()
 	defer db.Close()
-	rows, err := db.Query("select * from articles")
+	rows, err := db.Query("select article_id,title,author,likes from articles")
 
 	if err != nil {
 		return nil, err
 	}
 
-	var result []Article
+	var result []Title
 
 	for rows.Next() {
-		var article Article
-		rows.Scan(&article.ArticleID, &article.Title, &article.Content, &article.Author)
-		result = append(result, article)
+		var title Title
+		rows.Scan(&title.ArticleId, &title.Title, &title.Author, &title.Author)
+		result = append(result, title)
 
 	}
 	return result, err
 }
 
-func SelectOneArticle(articleId string) (Article, error) {
+func SelectOneArticleStep(articleId, stepId string) (Article, error) {
 	db, err := dbOpen()
 	if err != nil {
 		return Article{}, err
 	}
 	defer db.Close()
 	var article Article
-
-	err = db.QueryRow("select * from articles where article_id = $1", articleId).Scan(&article.ArticleID, &article.Title, &article.Content, &article.Author)
+	err = db.QueryRow("select title,author from articles where article_id=$1", articleId).Scan(&article.Title, &article.Author)
 	if err != nil {
-
 		return Article{}, err
 	}
-	return article, nil
-}
-
-func SelectAllTitleAndID() ([]Titles, error) {
-	db, err := dbOpen()
-	defer db.Close()
-	rows, err := db.Query("select article_id,title from articles")
+	rows, err := db.Query(`select step_id,code_id,code_file_name,code_content from 
+		(select title,author,step_primary_key,step_id,articles.article_id from articles
+		join steps on articles.article_id = steps.article_id where articles.article_id=$1 and steps.step_id=$2) as article_steps 
+		join codes on article_steps.step_primary_key = codes.step_primary_key`, articleId, stepId)
 
 	if err != nil {
-		return nil, err
+		return Article{}, err
 	}
-
-	var result []Titles
+	var steps []Step
 
 	for rows.Next() {
-		var article Titles
-		rows.Scan(&article.ArticleID, &article.Title)
-		result = append(result, article)
+		var stepId int
+		var codeId int
+		var codeFileName string
+		var codeContent string
+		rows.Scan(&stepId, &codeId, &codeFileName, &codeContent)
+		log.Println("データベースより取得", stepId, codeId, codeFileName, codeContent)
+		if len(steps) > stepId {
+			code := Code{CodeContent: codeContent, CodeFileName: codeFileName}
+			steps[stepId].Codes = append(steps[stepId].Codes, code)
+		} else {
+			code := Code{CodeContent: codeContent, CodeFileName: codeFileName}
+			step := Step{Codes: []Code{code}}
+			steps = append(steps, step)
+		}
+	}
+	article.Steps = steps
 
-	}
-	return result, err
-}
-
-func InsertNewArticle(postJson ReceiveJson) error {
-	db, err := dbOpen()
-	defer db.Close()
-	if err != nil {
-		return err
-	}
-	title := postJson.Title
-	if title == "" {
-		title = "no_title"
-	}
-	content := postJson.Content
-	if content == "" {
-		content = "no_content"
-	}
-	author := postJson.Author
-	if author == "" {
-		author = "no_author"
-	}
-
-	_, err = db.Exec("insert into articles  (title,article_content,author) values ($1,$2,$3)", title, content, author)
-	return err
-}
-
-func EditArticle(articleId string, postJson ReceiveJson) error {
-	db, err := dbOpen()
-	defer db.Close()
-	if err != nil {
-		return err
-	}
-
-	title := postJson.Title
-	if title == "" {
-		title = "no_title"
-	}
-	content := postJson.Content
-	if content == "" {
-		content = "no_content"
-	}
-	author := postJson.Author
-	if author == "" {
-		author = "no_author"
-	}
-	_, err = db.Exec("update articles Set title=$1,article_content=$2,author=$3 WHERE article_id=$4", title, content, author, articleId)
-	return err
+	return article, nil
 }
