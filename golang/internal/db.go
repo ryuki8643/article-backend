@@ -5,7 +5,6 @@ import (
 	"fmt"
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
-	"log"
 )
 
 type Message struct {
@@ -72,7 +71,7 @@ func SelectAllArticle() ([]Title, error) {
 
 	for rows.Next() {
 		var title Title
-		err = rows.Scan(&title.ArticleId, &title.Title, &title.Author, &title.Author)
+		err = rows.Scan(&title.ArticleId, &title.Title, &title.Author, &title.Likes)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -114,7 +113,7 @@ func SelectOneArticle(articleId string) (ArticleAllSteps, error) {
 		if err != nil {
 			return ArticleAllSteps{}, errors.WithStack(err)
 		}
-		log.Println("データベースより取得", stepId, codeId, codeFileName, codeContent)
+
 		if len(steps) > stepId {
 			code := Code{CodeContent: codeContent, CodeFileName: codeFileName}
 			steps[stepId].Codes = append(steps[stepId].Codes, code)
@@ -146,7 +145,6 @@ func SelectOneArticleStep(articleId, stepId string) (ArticleOneStep, error) {
 		join codes on article_steps.step_primary_key = codes.step_primary_key`, articleId, stepId)
 
 	if err != nil {
-		log.Println(err)
 		return ArticleOneStep{}, errors.WithStack(err)
 	}
 	var codes []Code
@@ -160,7 +158,7 @@ func SelectOneArticleStep(articleId, stepId string) (ArticleOneStep, error) {
 		if err != nil {
 			return ArticleOneStep{}, errors.WithStack(err)
 		}
-		log.Println("データベースより取得", stepId, codeId, codeFileName, codeContent)
+
 		code := Code{CodeContent: codeContent, CodeFileName: codeFileName}
 		codes = append(codes, code)
 
@@ -170,55 +168,132 @@ func SelectOneArticleStep(articleId, stepId string) (ArticleOneStep, error) {
 	return article, nil
 }
 
-func AddNewArticle(postJson ArticleAllSteps) error {
-	db, err := dbOpen()
+func addArticle(postJson ArticleAllSteps, articleId int, tx *sql.Tx) error {
+
+	_, err := tx.Exec("insert into articles values ($1,$2,$3,$4)", articleId, postJson.Title, postJson.Author, 0)
 	if err != nil {
-		return errors.WithStack(err)
-	}
-	defer db.Close()
-	tx, err := db.Begin()
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	var article_id int
-	err = tx.QueryRow("select max(article_id)+1 from articles").Scan(&article_id)
-	if err != nil {
-		tx.Rollback()
-		return errors.WithStack(err)
-	}
-	_, err = tx.Exec("insert into articles values ($1,$2,$3,$4)", article_id, postJson.Title, postJson.Author, 0)
-	if err != nil {
-		tx.Rollback()
 		return errors.WithStack(err)
 	}
 
 	var stepPrimaryKey int
-	err = db.QueryRow("select max(step_primary_key)+1 from steps").Scan(&stepPrimaryKey)
+	err = tx.QueryRow("select max(step_primary_key)+1 from steps").Scan(&stepPrimaryKey)
 	if err != nil {
-		tx.Rollback()
 		return errors.WithStack(err)
 	}
 
 	for i, v := range postJson.Steps {
-		_, err = tx.Exec("insert into steps values ($1,$2,$3,$4)", stepPrimaryKey+i, article_id, i, v.Content)
+		_, err = tx.Exec("insert into steps values ($1,$2,$3,$4)", stepPrimaryKey+i, articleId, i, v.Content)
 		if err != nil {
-			log.Println("aa")
-			tx.Rollback()
 			return errors.WithStack(err)
 		}
 		for i2, v2 := range v.Codes {
 			_, err = tx.Exec("insert into codes values ($1,$2,$3,$4)", stepPrimaryKey+i, i2, v2.CodeFileName, v2.CodeContent)
 			if err != nil {
-				tx.Rollback()
 				return errors.WithStack(err)
 			}
 
 		}
 
 	}
+	return err
+}
+
+func AddNewArticle(postJson ArticleAllSteps) error {
+	db, err := dbOpen()
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	defer db.Close()
+
+	var articleId int
+	err = db.QueryRow("select max(article_id)+1 from articles").Scan(&articleId)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	err = addArticle(postJson, articleId, tx)
+
+	if err != nil {
+		return err
+	}
+
+	if err == nil {
+		tx.Commit()
+	} else {
+		tx.Rollback()
+	}
+	return err
+}
+
+func EditArticle(postJson ArticleAllSteps, articleId int) error {
+	db, err := dbOpen()
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	defer db.Close()
+
+	err = deleteArticle(db, articleId)
+	if err != nil {
+		return err
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	addArticle(postJson, articleId, tx)
+
+	if err == nil {
+		tx.Commit()
+	} else {
+		tx.Rollback()
+	}
+
+	return err
+}
+
+func deleteArticle(db *sql.DB, articleId int) error {
+	rows, err := db.Query("select step_primary_key from steps where article_id=$1", articleId)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	var stepPrimaryKeys []string
+
+	for rows.Next() {
+		var stepPrimaryKey string
+		rows.Scan(&stepPrimaryKey)
+		stepPrimaryKeys = append(stepPrimaryKeys, stepPrimaryKey)
+	}
+	tx, err := db.Begin()
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	for _, v := range stepPrimaryKeys {
+		_, err = tx.Exec("delete from codes where step_primary_key=$1", v)
+		if err != nil {
+			return errors.WithStack(err)
+			tx.Rollback()
+		}
+	}
+	_, err = tx.Exec("delete from steps where article_id=$1", articleId)
+	if err != nil {
+		return errors.WithStack(err)
+		tx.Rollback()
+	}
+	_, err = tx.Exec("delete from articles where article_id=$1", articleId)
+	if err != nil {
+		return errors.WithStack(err)
+		tx.Rollback()
+	}
 
 	if err == nil {
 		tx.Commit()
 	}
-	return err
+	return nil
 }
