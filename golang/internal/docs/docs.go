@@ -51,7 +51,10 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/server.Titles"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/server.Titles"
+                            }
                         }
                     }
                 }
@@ -166,14 +169,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "article"
+                    "db"
                 ],
                 "summary": "全ての記事のデータを返す",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/server.Article"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/server.Article"
+                            }
                         }
                     }
                 }

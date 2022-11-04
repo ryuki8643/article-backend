@@ -25,9 +25,9 @@ func hello(c *gin.Context) {
 
 // GetAllArticles ...
 // @Summary 全ての記事のデータを返す
-// @Tags article
+// @Tags db
 // @Produce  json
-// @Success 200 {object} Article
+// @Success 200 {array} Article
 // @Router /db [get]
 func getAllArticles(c *gin.Context) {
 	articles, err := SelectAllArticle()
@@ -61,7 +61,7 @@ func getOneArticle(c *gin.Context) {
 // @Summary 全ての記事のidとtitleを返す
 // @Tags article
 // @Produce  json
-// @Success 200 {object} Titles
+// @Success 200 {array} Titles
 // @Router /article [get]
 func allTitle(c *gin.Context) {
 	titles, err := SelectAllTitleAndID()

@@ -58,7 +58,9 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/server.Titles'
+            items:
+              $ref: '#/definitions/server.Titles'
+            type: array
       summary: 全ての記事のidとtitleを返す
       tags:
       - article
@@ -137,8 +139,10 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/server.Article'
+            items:
+              $ref: '#/definitions/server.Article'
+            type: array
       summary: 全ての記事のデータを返す
       tags:
-      - article
+      - db
 swagger: "2.0"
