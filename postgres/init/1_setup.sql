@@ -30,6 +30,6 @@ create table if not exists codes
     foreign key (step_primary_key) references steps(step_primary_key),
     primary key (step_primary_key,code_id)
     );
-insert into articles values (0,'no_title','no_author');
+insert into articles values (0,'no_title','no_author',0);
 insert into steps values (0,0,0,'content'),(1,0,1,'content');
 insert into codes values (0,0,'no_file','no_code'),(0,1,'no_file','no_code'),(1,0,'no_file','no_code'),(1,1,'no_file','exit');

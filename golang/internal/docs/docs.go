@@ -121,7 +121,7 @@ const docTemplate = `{
                     }
                 }
             },
-            "post": {
+            "put": {
                 "produces": [
                     "application/json"
                 ],
@@ -198,6 +198,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/likes/{article_id}": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "like"
+                ],
+                "summary": "いいね数の追加",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Article ID",
+                        "name": "article_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/server.Message"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.Message"
+                        }
+                    }
+                }
+            }
+        },
         "/swagger": {
             "get": {
                 "produces": [
@@ -225,6 +259,9 @@ const docTemplate = `{
                 "author": {
                     "type": "string"
                 },
+                "likes": {
+                    "type": "string"
+                },
                 "steps": {
                     "type": "array",
                     "items": {
@@ -240,6 +277,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "author": {
+                    "type": "string"
+                },
+                "likes": {
                     "type": "string"
                 },
                 "step": {

@@ -154,7 +154,7 @@ func insertNewArticle(c *gin.Context) {
 // @Param article_json body ArticleAllSteps true "Article Json"
 // @Success 200 {object} Message
 // @Failure 400 {object} Message
-// @Router /articles/{article_id} [post]
+// @Router /articles/{article_id} [put]
 func editArticle(c *gin.Context) {
 	var postJson ArticleAllSteps
 	if err := c.ShouldBindJSON(&postJson); err != nil {
@@ -185,6 +185,29 @@ func editArticle(c *gin.Context) {
 	})
 }
 
+// LikesArticle ...
+// @Summary いいね数の追加
+// @Tags like
+// @Produce  json
+// @Param article_id path int true "Article ID"
+// @Success 200 {object} Message
+// @Failure 400 {object} Message
+// @Router /likes/{article_id} [put]
+func LikesArticle(c *gin.Context) {
+	err := AddLike(c.Param("article_id"))
+	if err != nil {
+		c.JSONP(http.StatusBadRequest, gin.H{
+			"message": err.Error(),
+		})
+		log.Printf("%+v", err)
+		return
+	}
+
+	c.JSONP(http.StatusOK, gin.H{
+		"message": "put completed",
+	})
+}
+
 // Swagger ...
 // @Summary /swagger/index.html#/にアクセスするとswaggerを返す
 // @Tags helloWorld
@@ -205,11 +228,13 @@ func NewHTTPServer() {
 	r.GET("/articles/:article_id", getOneArticle)
 	r.GET("/articles/:article_id/:step_id", getOneArticleStep)
 
-	r.POST("articles", insertNewArticle)
+	r.POST("/articles", insertNewArticle)
 	r.PUT("/articles/:article_id", editArticle)
 
-	r.GET("/insertCheck", insertArticleTest)
-	r.GET("/put/:article_id", EditArticleTest)
+	r.GET("/likes/:article_id", LikesArticle)
+
+	r.GET("/check/post", insertArticleTest)
+	r.GET("/check/put/:article_id", EditArticleTest)
 
 	r.GET("/", hello)
 	r.GET("/swagger/*any", ginSwaggerDoc())

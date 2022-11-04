@@ -3,6 +3,8 @@ definitions:
     properties:
       author:
         type: string
+      likes:
+        type: string
       steps:
         items:
           $ref: '#/definitions/server.Step'
@@ -13,6 +15,8 @@ definitions:
   server.ArticleOneStep:
     properties:
       author:
+        type: string
+      likes:
         type: string
       step:
         $ref: '#/definitions/server.Step'
@@ -124,7 +128,7 @@ paths:
       summary: urlパラメータで指定された番号の記事を出力
       tags:
       - article
-    post:
+    put:
       parameters:
       - description: Article ID
         in: path
@@ -174,6 +178,28 @@ paths:
       summary: urlパラメータで指定された記事のステップを出力
       tags:
       - article
+  /likes/{article_id}:
+    put:
+      parameters:
+      - description: Article ID
+        in: path
+        name: article_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.Message'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/server.Message'
+      summary: いいね数の追加
+      tags:
+      - like
   /swagger:
     get:
       produces:

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
+	"strconv"
 )
 
 type Message struct {
@@ -21,12 +22,14 @@ type Title struct {
 type ArticleAllSteps struct {
 	Title  string `json:"title"`
 	Author string `json:"author"`
+	Likes  string `json:"likes"`
 	Steps  []Step
 }
 
 type ArticleOneStep struct {
 	Title  string `json:"title"`
 	Author string `json:"author"`
+	Likes  string `json:"likes"`
 	Step   Step
 }
 
@@ -61,7 +64,7 @@ func dbOpen() (*sql.DB, error) {
 func SelectAllArticle() ([]Title, error) {
 	db, err := dbOpen()
 	defer db.Close()
-	rows, err := db.Query("select article_id,title,author,likes from articles")
+	rows, err := db.Query("select article_id,title,author,likes from articles order by article_id")
 
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -88,7 +91,7 @@ func SelectOneArticle(articleId string) (ArticleAllSteps, error) {
 	}
 	defer db.Close()
 	var article ArticleAllSteps
-	err = db.QueryRow("select title,author from articles where article_id=$1", articleId).Scan(&article.Title, &article.Author)
+	err = db.QueryRow("select title,author,likes from articles where article_id=$1", articleId).Scan(&article.Title, &article.Author, &article.Likes)
 	if err != nil {
 		return ArticleAllSteps{}, errors.WithStack(err)
 	}
@@ -135,7 +138,7 @@ func SelectOneArticleStep(articleId, stepId string) (ArticleOneStep, error) {
 	}
 	defer db.Close()
 	var article ArticleOneStep
-	err = db.QueryRow("select title,author from articles where article_id=$1", articleId).Scan(&article.Title, &article.Author)
+	err = db.QueryRow("select title,author,likes from articles where article_id=$1", articleId).Scan(&article.Title, &article.Author, &article.Likes)
 	if err != nil {
 		return ArticleOneStep{}, errors.WithStack(err)
 	}
@@ -296,4 +299,19 @@ func deleteArticle(db *sql.DB, articleId int) error {
 		tx.Commit()
 	}
 	return nil
+}
+
+func AddLike(articleId string) error {
+	a, err := strconv.Atoi(articleId)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	db, err := dbOpen()
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	defer db.Close()
+
+	_, err = db.Exec("update articles set likes=(select likes from articles where article_id=$1)+1 where article_id=$1", a)
+	return errors.WithStack(err)
 }
