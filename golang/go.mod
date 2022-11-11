@@ -3,6 +3,7 @@ module github.com/ryuki8643/article-backend
 go 1.19
 
 require (
+	github.com/deckarep/golang-set/v2 v2.1.0
 	github.com/gin-gonic/gin v1.8.1
 	github.com/lib/pq v1.10.7
 	github.com/pkg/errors v0.9.1

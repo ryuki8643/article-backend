@@ -68,7 +68,7 @@ func getOneArticle(c *gin.Context) {
 // @Produce  json
 // @Param article_id path int true "Article ID"
 // @Param step_id path int true "Step ID"
-// @Success 200 {object} ArticleOneStep
+// @Success 200 {object} ArticleAllSteps
 // @Router /articles/{article_id}/{step_id} [get]
 func getOneArticleStep(c *gin.Context) {
 
