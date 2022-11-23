@@ -5,6 +5,7 @@ import (
 	"log"
 	"strconv"
 
+	"github.com/gin-contrib/cors"
 	_ "github.com/ryuki8643/article-backend/internal/docs"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -224,6 +225,16 @@ func ginSwaggerDoc() func(c *gin.Context) {
 func NewHTTPServer() {
 	r := gin.Default()
 	r.Use(ZapLogger)
+	r.Use(cors.New(cors.Config{
+		AllowOrigins: []string{
+			"http://localhost:3000",
+		},
+		AllowMethods: []string{
+			"POST",
+			"GET",
+			"PUT",
+		},
+	}))
 	r.GET("/articles", getAllArticles)
 	r.GET("/articles/:article_id", getOneArticle)
 	r.GET("/articles/:article_id/:step_id", getOneArticleStep)
