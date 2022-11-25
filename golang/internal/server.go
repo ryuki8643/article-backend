@@ -209,6 +209,29 @@ func LikesArticle(c *gin.Context) {
 	})
 }
 
+// DeleteLikesArticle ...
+// @Summary いいね数の削除
+// @Tags like
+// @Produce  json
+// @Param article_id path int true "Article ID"
+// @Success 200 {object} Message
+// @Failure 400 {object} Message
+// @Router /likes/{article_id} [delete]
+func DeleteLikesArticle(c *gin.Context) {
+	err := DeleteLike(c.Param("article_id"))
+	if err != nil {
+		c.JSONP(http.StatusBadRequest, gin.H{
+			"message": err.Error(),
+		})
+		log.Printf("%+v", err)
+		return
+	}
+
+	c.JSONP(http.StatusOK, gin.H{
+		"message": "delete completed",
+	})
+}
+
 // Swagger ...
 // @Summary /swagger/index.html#/にアクセスするとswaggerを返す
 // @Tags helloWorld
@@ -233,6 +256,7 @@ func NewHTTPServer() {
 			"POST",
 			"GET",
 			"PUT",
+			"DELETE",
 		},
 	}))
 	r.GET("/articles", getAllArticles)
@@ -242,10 +266,12 @@ func NewHTTPServer() {
 	r.POST("/articles", insertNewArticle)
 	r.PUT("/articles/:article_id", editArticle)
 
-	r.GET("/likes/:article_id", LikesArticle)
+	r.PUT("/likes/:article_id", LikesArticle)
 
 	r.GET("/check/post", insertArticleTest)
 	r.GET("/check/put/:article_id", EditArticleTest)
+	r.GET("/check/add_likes/:article_id", LikesArticle)
+	r.GET("/check/delete_likes/:article_id", DeleteLikesArticle)
 
 	r.GET("/", hello)
 	r.GET("/swagger/*any", ginSwaggerDoc())

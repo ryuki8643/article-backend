@@ -230,6 +230,38 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "like"
+                ],
+                "summary": "いいね数の削除",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Article ID",
+                        "name": "article_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/server.Message"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.Message"
+                        }
+                    }
+                }
             }
         },
         "/swagger": {
@@ -260,7 +292,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "likes": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "stepCount": {
                     "type": "integer"
@@ -279,10 +311,10 @@ const docTemplate = `{
         "server.Code": {
             "type": "object",
             "properties": {
-                "code_content": {
+                "codeContent": {
                     "type": "string"
                 },
-                "code_file_name": {
+                "codeFileName": {
                     "type": "string"
                 }
             }

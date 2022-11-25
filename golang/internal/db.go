@@ -24,19 +24,19 @@ type Title struct {
 type ArticleAllSteps struct {
 	Title     string `json:"title"`
 	Author    string `json:"author"`
-	Likes     string `json:"likes"`
+	Likes     int    `json:"likes"`
 	StepCount int    `json:"stepCount"`
-	Steps     []Step
+	Steps     []Step `json:"steps"`
 }
 
 type Step struct {
 	Content string `json:"content"`
-	Codes   []Code
+	Codes   []Code `json:"codes"`
 }
 
 type Code struct {
-	CodeFileName string `json:"code_file_name"`
-	CodeContent  string `json:"code_content"`
+	CodeFileName string `json:"codeFileName"`
+	CodeContent  string `json:"codeContent"`
 }
 
 const (
@@ -405,5 +405,20 @@ func AddLike(articleId string) error {
 	defer db.Close()
 
 	_, err = db.Exec("update articles set likes=(select likes from articles where article_id=$1)+1 where article_id=$1", a)
+	return errors.WithStack(err)
+}
+
+func DeleteLike(articleId string) error {
+	a, err := strconv.Atoi(articleId)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	db, err := dbOpen()
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	defer db.Close()
+
+	_, err = db.Exec("update articles set likes=(select likes from articles where article_id=$1)-1 where article_id=$1 AND (select likes from articles where article_id=$1)>0", a)
 	return errors.WithStack(err)
 }
