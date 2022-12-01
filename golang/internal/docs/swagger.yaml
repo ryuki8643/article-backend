@@ -34,6 +34,8 @@ definitions:
         type: array
       content:
         type: string
+      stepTitle:
+        type: string
     type: object
   server.Title:
     properties:

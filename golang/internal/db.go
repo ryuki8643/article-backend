@@ -30,8 +30,9 @@ type ArticleAllSteps struct {
 }
 
 type Step struct {
-	Content string `json:"content"`
-	Codes   []Code `json:"codes"`
+	StepTitle string `json:"stepTitle"`
+	Content   string `json:"content"`
+	Codes     []Code `json:"codes"`
 }
 
 type Code struct {
@@ -128,8 +129,8 @@ func SelectOneArticle(articleId string) (ArticleAllSteps, error) {
 	if err != nil {
 		return ArticleAllSteps{}, errors.WithStack(err)
 	}
-	rows, err := db.Query(`select step_id,code_id,code_file_name,code_content,article_content from 
-		(select title,author,step_primary_key,step_id,articles.article_id,article_content from articles
+	rows, err := db.Query(`select step_title,step_id,code_id,code_file_name,code_content,article_content from 
+		(select title,author,step_primary_key,step_title,step_id,articles.article_id,article_content from articles
 		join steps on articles.article_id = steps.article_id where articles.article_id=$1) as article_steps 
 		join codes on article_steps.step_primary_key = codes.step_primary_key`, articleId)
 
@@ -139,13 +140,14 @@ func SelectOneArticle(articleId string) (ArticleAllSteps, error) {
 	var steps []Step
 
 	for rows.Next() {
+		var stepTitle string
 		var stepId int
 		var codeId int
 		var codeFileName string
 		var codeContent string
 		var articleContent string
 
-		err = rows.Scan(&stepId, &codeId, &codeFileName, &codeContent, &articleContent)
+		err = rows.Scan(&stepTitle, &stepId, &codeId, &codeFileName, &codeContent, &articleContent)
 		if err != nil {
 			return ArticleAllSteps{}, errors.WithStack(err)
 		}
@@ -155,7 +157,7 @@ func SelectOneArticle(articleId string) (ArticleAllSteps, error) {
 			steps[stepId].Codes = append(steps[stepId].Codes, code)
 		} else {
 			code := Code{CodeContent: codeContent, CodeFileName: codeFileName}
-			step := Step{Codes: []Code{code}, Content: articleContent}
+			step := Step{Codes: []Code{code}, Content: articleContent, StepTitle: stepTitle}
 			steps = append(steps, step)
 		}
 	}
@@ -196,8 +198,8 @@ func SelectOneArticleStep(articleId, stepId string) (ArticleAllSteps, error) {
 	if err != nil {
 		return ArticleAllSteps{}, errors.WithStack(err)
 	}
-	rows, err := db.Query(`select code_id,code_file_name,code_content,article_content from 
-		(select title,author,step_primary_key,step_id,articles.article_id,article_content from articles
+	rows, err := db.Query(`select step_title,code_id,code_file_name,code_content,article_content from 
+		(select title,author,step_primary_key,step_id,articles.article_id,article_content,step_title from articles
 		join steps on articles.article_id = steps.article_id where articles.article_id=$1 and steps.step_id=$2) as article_steps 
 		join codes on article_steps.step_primary_key = codes.step_primary_key`, articleId, stepId)
 
@@ -206,13 +208,15 @@ func SelectOneArticleStep(articleId, stepId string) (ArticleAllSteps, error) {
 	}
 	var codesCons []Code
 	var articleContent string
+	var stepTitle string
 	codesSet := mapset.NewSet[string]()
 	for rows.Next() {
+
 		var codeId int
 		var codeFileName string
 		var codeContent string
 
-		err = rows.Scan(&codeId, &codeFileName, &codeContent, &articleContent)
+		err = rows.Scan(&stepTitle, &codeId, &codeFileName, &codeContent, &articleContent)
 		if err != nil {
 			return ArticleAllSteps{}, errors.WithStack(err)
 		}
@@ -224,7 +228,7 @@ func SelectOneArticleStep(articleId, stepId string) (ArticleAllSteps, error) {
 	}
 	var codesPres []Code
 
-	if numStepId != 0 {
+	if numStepId > 0 {
 		rows, err = db.Query(`select code_file_name,code_content from 
 		(select title,author,step_primary_key,step_id,articles.article_id,article_content from articles
 		join steps on articles.article_id = steps.article_id where articles.article_id=$1 and steps.step_id=$2) as article_steps 
@@ -251,7 +255,7 @@ func SelectOneArticleStep(articleId, stepId string) (ArticleAllSteps, error) {
 		}
 	}
 
-	article.Steps = []Step{{Codes: codesPres, Content: articleContent}, {Codes: codesCons, Content: articleContent}}
+	article.Steps = []Step{{Codes: codesPres, Content: articleContent, StepTitle: stepTitle}, {Codes: codesCons, Content: articleContent}}
 
 	return article, nil
 }
@@ -274,7 +278,7 @@ func addArticle(postJson ArticleAllSteps, articleId int, tx *sql.Tx) error {
 	}
 
 	for i, v := range postJson.Steps {
-		_, err = tx.Exec("insert into steps values ($1,$2,$3,$4)", stepPrimaryKey+i, articleId, i, v.Content)
+		_, err = tx.Exec("insert into steps values ($1,$2,$3,$4,$5)", stepPrimaryKey+i, articleId, i, v.StepTitle, v.Content)
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -330,6 +334,16 @@ func EditArticle(postJson ArticleAllSteps, articleId int) error {
 		return errors.WithStack(err)
 	}
 	defer db.Close()
+
+	var dbArticleId int
+
+	err = db.QueryRow("select max(article_id) from articles").Scan(&dbArticleId)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	if dbArticleId < articleId {
+		return errors.WithStack(fmt.Errorf("there is no content in this articleId"))
+	}
 
 	err = deleteArticle(db, articleId)
 	if err != nil {

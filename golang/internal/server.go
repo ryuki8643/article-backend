@@ -86,7 +86,7 @@ func getOneArticleStep(c *gin.Context) {
 }
 
 func insertArticleTest(c *gin.Context) {
-	p := ArticleAllSteps{Author: "a", Title: "b", Steps: []Step{{Content: "content", Codes: []Code{{CodeContent: "ss", CodeFileName: "cc"}}}}}
+	p := ArticleAllSteps{Author: "a", Title: "b", Steps: []Step{{StepTitle: "punguin", Content: "content", Codes: []Code{{CodeContent: "ss", CodeFileName: "cc"}}}}}
 	err := AddNewArticle(p)
 	if err != nil {
 		log.Printf("%+v", err)
@@ -95,7 +95,7 @@ func insertArticleTest(c *gin.Context) {
 }
 
 func EditArticleTest(c *gin.Context) {
-	p := ArticleAllSteps{Author: "penguin", Title: "penguin", Steps: []Step{{Content: "content", Codes: []Code{{CodeContent: "ss", CodeFileName: "cc"}}}}}
+	p := ArticleAllSteps{Author: "penguin", Title: "penguin", Steps: []Step{{StepTitle: "punguin", Content: "content", Codes: []Code{{CodeContent: "ss", CodeFileName: "cc"}}}}}
 
 	i, err := strconv.Atoi(c.Param("article_id"))
 	if err != nil {
@@ -267,6 +267,7 @@ func NewHTTPServer() {
 	r.PUT("/articles/:article_id", editArticle)
 
 	r.PUT("/likes/:article_id", LikesArticle)
+	r.DELETE("/likes/:article_id", DeleteLikesArticle)
 
 	r.GET("/check/post", insertArticleTest)
 	r.GET("/check/put/:article_id", EditArticleTest)

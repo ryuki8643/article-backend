@@ -338,6 +338,9 @@ const docTemplate = `{
                 },
                 "content": {
                     "type": "string"
+                },
+                "stepTitle": {
+                    "type": "string"
                 }
             }
         },
