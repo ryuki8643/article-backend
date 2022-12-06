@@ -5,21 +5,12 @@ definitions:
         type: string
       likes:
         type: string
+      stepCount:
+        type: integer
       steps:
         items:
           $ref: '#/definitions/server.Step'
         type: array
-      title:
-        type: string
-    type: object
-  server.ArticleOneStep:
-    properties:
-      author:
-        type: string
-      likes:
-        type: string
-      step:
-        $ref: '#/definitions/server.Step'
       title:
         type: string
     type: object
@@ -51,6 +42,8 @@ definitions:
       author:
         type: string
       likes:
+        type: integer
+      stepCount:
         type: integer
       title:
         type: string
@@ -174,7 +167,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/server.ArticleOneStep'
+            $ref: '#/definitions/server.ArticleAllSteps'
       summary: urlパラメータで指定された記事のステップを出力
       tags:
       - article

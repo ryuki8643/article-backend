@@ -192,7 +192,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/server.ArticleOneStep"
+                            "$ref": "#/definitions/server.ArticleAllSteps"
                         }
                     }
                 }
@@ -262,28 +262,14 @@ const docTemplate = `{
                 "likes": {
                     "type": "string"
                 },
+                "stepCount": {
+                    "type": "integer"
+                },
                 "steps": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/server.Step"
                     }
-                },
-                "title": {
-                    "type": "string"
-                }
-            }
-        },
-        "server.ArticleOneStep": {
-            "type": "object",
-            "properties": {
-                "author": {
-                    "type": "string"
-                },
-                "likes": {
-                    "type": "string"
-                },
-                "step": {
-                    "$ref": "#/definitions/server.Step"
                 },
                 "title": {
                     "type": "string"
@@ -333,6 +319,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "likes": {
+                    "type": "integer"
+                },
+                "stepCount": {
                     "type": "integer"
                 },
                 "title": {
