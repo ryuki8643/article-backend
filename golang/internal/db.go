@@ -255,7 +255,7 @@ func SelectOneArticleStep(articleId, stepId string) (ArticleAllSteps, error) {
 		}
 	}
 
-	article.Steps = []Step{{Codes: codesPres, Content: articleContent, StepTitle: stepTitle}, {Codes: codesCons, Content: articleContent}}
+	article.Steps = []Step{{Codes: codesPres, Content: articleContent, StepTitle: stepTitle}, {StepTitle: stepTitle, Codes: codesCons, Content: articleContent}}
 
 	return article, nil
 }
