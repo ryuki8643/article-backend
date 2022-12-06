@@ -5,6 +5,7 @@ import (
 	"log"
 	"strconv"
 
+	"github.com/gin-contrib/cors"
 	_ "github.com/ryuki8643/article-backend/internal/docs"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -85,7 +86,7 @@ func getOneArticleStep(c *gin.Context) {
 }
 
 func insertArticleTest(c *gin.Context) {
-	p := ArticleAllSteps{Author: "a", Title: "b", Steps: []Step{{Content: "content", Codes: []Code{{CodeContent: "ss", CodeFileName: "cc"}}}}}
+	p := ArticleAllSteps{Author: "a", Title: "b", Steps: []Step{{StepTitle: "punguin", Content: "content", Codes: []Code{{CodeContent: "ss", CodeFileName: "cc"}}}}}
 	err := AddNewArticle(p)
 	if err != nil {
 		log.Printf("%+v", err)
@@ -94,7 +95,7 @@ func insertArticleTest(c *gin.Context) {
 }
 
 func EditArticleTest(c *gin.Context) {
-	p := ArticleAllSteps{Author: "penguin", Title: "penguin", Steps: []Step{{Content: "content", Codes: []Code{{CodeContent: "ss", CodeFileName: "cc"}}}}}
+	p := ArticleAllSteps{Author: "penguin", Title: "penguin", Steps: []Step{{StepTitle: "punguin", Content: "content", Codes: []Code{{CodeContent: "ss", CodeFileName: "cc"}}}}}
 
 	i, err := strconv.Atoi(c.Param("article_id"))
 	if err != nil {
@@ -208,6 +209,29 @@ func LikesArticle(c *gin.Context) {
 	})
 }
 
+// DeleteLikesArticle ...
+// @Summary いいね数の削除
+// @Tags like
+// @Produce  json
+// @Param article_id path int true "Article ID"
+// @Success 200 {object} Message
+// @Failure 400 {object} Message
+// @Router /likes/{article_id} [delete]
+func DeleteLikesArticle(c *gin.Context) {
+	err := DeleteLike(c.Param("article_id"))
+	if err != nil {
+		c.JSONP(http.StatusBadRequest, gin.H{
+			"message": err.Error(),
+		})
+		log.Printf("%+v", err)
+		return
+	}
+
+	c.JSONP(http.StatusOK, gin.H{
+		"message": "delete completed",
+	})
+}
+
 // Swagger ...
 // @Summary /swagger/index.html#/にアクセスするとswaggerを返す
 // @Tags helloWorld
@@ -224,6 +248,17 @@ func ginSwaggerDoc() func(c *gin.Context) {
 func NewHTTPServer() {
 	r := gin.Default()
 	r.Use(ZapLogger)
+	r.Use(cors.New(cors.Config{
+		AllowOrigins: []string{
+			"http://localhost:3000",
+		},
+		AllowMethods: []string{
+			"POST",
+			"GET",
+			"PUT",
+			"DELETE",
+		},
+	}))
 	r.GET("/articles", getAllArticles)
 	r.GET("/articles/:article_id", getOneArticle)
 	r.GET("/articles/:article_id/:step_id", getOneArticleStep)
@@ -231,10 +266,13 @@ func NewHTTPServer() {
 	r.POST("/articles", insertNewArticle)
 	r.PUT("/articles/:article_id", editArticle)
 
-	r.GET("/likes/:article_id", LikesArticle)
+	r.PUT("/likes/:article_id", LikesArticle)
+	r.DELETE("/likes/:article_id", DeleteLikesArticle)
 
 	r.GET("/check/post", insertArticleTest)
 	r.GET("/check/put/:article_id", EditArticleTest)
+	r.GET("/check/add_likes/:article_id", LikesArticle)
+	r.GET("/check/delete_likes/:article_id", DeleteLikesArticle)
 
 	r.GET("/", hello)
 	r.GET("/swagger/*any", ginSwaggerDoc())

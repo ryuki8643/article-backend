@@ -4,7 +4,7 @@ definitions:
       author:
         type: string
       likes:
-        type: string
+        type: integer
       stepCount:
         type: integer
       steps:
@@ -16,9 +16,9 @@ definitions:
     type: object
   server.Code:
     properties:
-      code_content:
+      codeContent:
         type: string
-      code_file_name:
+      codeFileName:
         type: string
     type: object
   server.Message:
@@ -33,6 +33,8 @@ definitions:
           $ref: '#/definitions/server.Code'
         type: array
       content:
+        type: string
+      stepTitle:
         type: string
     type: object
   server.Title:
@@ -172,6 +174,27 @@ paths:
       tags:
       - article
   /likes/{article_id}:
+    delete:
+      parameters:
+      - description: Article ID
+        in: path
+        name: article_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.Message'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/server.Message'
+      summary: いいね数の削除
+      tags:
+      - like
     put:
       parameters:
       - description: Article ID
