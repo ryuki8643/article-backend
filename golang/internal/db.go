@@ -6,6 +6,8 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
+	"log"
+	"os"
 	"strconv"
 )
 
@@ -14,11 +16,12 @@ type Message struct {
 }
 
 type Title struct {
-	ArticleId string `json:"articleId"`
-	Title     string `json:"title"`
-	Author    string `json:"author"`
-	Likes     int    `json:"likes"`
-	StepCount int    `json:"stepCount"`
+	ArticleId  string   `json:"articleId"`
+	Title      string   `json:"title"`
+	Author     string   `json:"author"`
+	Likes      int      `json:"likes"`
+	StepCount  int      `json:"stepCount"`
+	StepTitles []string `json:"stepTitles"`
 }
 
 type ArticleAllSteps struct {
@@ -48,6 +51,8 @@ const (
 	dbname   = "pgweb"
 )
 
+var first = true
+
 func dbOpen() (*sql.DB, error) {
 	psqlConn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 	db, err := sql.Open("postgres", psqlConn)
@@ -56,6 +61,24 @@ func dbOpen() (*sql.DB, error) {
 		return nil, errors.WithStack(err)
 	}
 	return db, errors.WithStack(err)
+}
+
+func DUnit() (string, error) {
+	db, err := dbOpen()
+	defer db.Close()
+	file, err := os.ReadFile("internal/postgres/init/1_setup.sql")
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	log.Printf(string(file))
+
+	_, err = db.Exec(string(file))
+
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	return "success", nil
 }
 
 func MaxStep(db *sql.DB, articleId string) (int, error) {
@@ -91,10 +114,23 @@ func SelectAllArticle() ([]Title, error) {
 			return nil, errors.WithStack(err)
 		}
 		maxStep, err := MaxStep(db, title.ArticleId)
+
 		if err != nil {
 			return nil, err
 		}
 		title.StepCount = maxStep
+
+		stepRows, err := db.Query(`select step_title from steps where article_id = $1`, title.ArticleId)
+
+		var stepTitles []string
+
+		for stepRows.Next() {
+			var stepTitle string
+			stepRows.Scan(&stepTitle)
+			stepTitles = append(stepTitles, stepTitle)
+		}
+		title.StepTitles = stepTitles
+
 		result = append(result, title)
 
 	}
