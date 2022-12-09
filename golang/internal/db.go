@@ -49,7 +49,7 @@ const (
 )
 
 func dbOpen() (*sql.DB, error) {
-	psqlConn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s", host, port, user, password, dbname)
+	psqlConn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 	db, err := sql.Open("postgres", psqlConn)
 
 	if err != nil {
