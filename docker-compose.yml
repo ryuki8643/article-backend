@@ -29,7 +29,6 @@ services:
     container_name: postgres
     volumes:
       - pgwebdb-data:/var/lib/postgresql/data
-      - ./postgres/init:/docker-entrypoint-initdb.d
     tty: true
 volumes:
   pgwebdb-data:

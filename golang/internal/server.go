@@ -12,6 +12,21 @@ import (
 	"net/http"
 )
 
+func DBInit(c *gin.Context) {
+	s, err := DUnit()
+	if err != nil {
+		log.Printf("%+v", err)
+		c.JSONP(http.StatusBadRequest, gin.H{
+			"message": err.Error(),
+		})
+	} else {
+		c.JSONP(http.StatusOK, gin.H{
+			"message": s,
+		})
+	}
+
+}
+
 // Hello ...
 // @Summary helloを返す
 // @Tags helloWorld
@@ -259,6 +274,7 @@ func NewHTTPServer() {
 			"DELETE",
 		},
 	}))
+	r.GET("/init", DBInit)
 	r.GET("/articles", getAllArticles)
 	r.GET("/articles/:article_id", getOneArticle)
 	r.GET("/articles/:article_id/:step_id", getOneArticleStep)
