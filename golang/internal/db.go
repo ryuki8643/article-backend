@@ -64,6 +64,9 @@ func dbOpen() (*sql.DB, error) {
 }
 
 func DUnit() (string, error) {
+	if !first {
+		return "already", nil
+	}
 	db, err := dbOpen()
 	defer db.Close()
 	file, err := os.ReadFile("internal/postgres/init/1_setup.sql")
@@ -77,6 +80,7 @@ func DUnit() (string, error) {
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
+	first = false
 
 	return "success", nil
 }
