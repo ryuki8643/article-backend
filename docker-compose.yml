@@ -15,10 +15,10 @@ services:
     ports:
       - "8081:8081"
     environment:
-      - DATABASE_URL=postgres://article:gNeqz9FWh0szcHpVz7Umvgf1NUs578uk@db:5432/pgweb?sslmode=disable
+      - DATABASE_URL=postgres://article:gNeqz9FWh0szcHpVz7Umvgf1NUs578uk@dpg-ce9a1hg2i3ms217l9610-a:5432/pgweb?sslmode=disable
     depends_on:
-      - db
-  db:
+      - dpg-ce9a1hg2i3ms217l9610-a
+  dpg-ce9a1hg2i3ms217l9610-a:
     image: postgres:14-alpine
     environment:
       POSTGRES_DB: pgweb
