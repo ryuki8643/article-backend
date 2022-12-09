@@ -44,7 +44,7 @@ const (
 	host     = "postgres"
 	port     = 5432
 	user     = "article"
-	password = "programarticle"
+	password = "gNeqz9FWh0szcHpVz7Umvgf1NUs578uk"
 	dbname   = "pgweb"
 )
 
