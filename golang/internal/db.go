@@ -43,8 +43,8 @@ type Code struct {
 const (
 	host     = "postgres"
 	port     = 5432
-	user     = "postgres"
-	password = "postgres"
+	user     = "article"
+	password = "programarticle"
 	dbname   = "pgweb"
 )
 
