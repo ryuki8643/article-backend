@@ -266,6 +266,7 @@ func NewHTTPServer() {
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: []string{
 			"http://localhost:3000",
+			"https://step-navi.web.app",
 		},
 		AllowMethods: []string{
 			"POST",
