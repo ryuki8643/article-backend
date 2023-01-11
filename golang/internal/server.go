@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"log"
 	"strconv"
@@ -97,7 +98,6 @@ func getOneArticleStep(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusOK, article)
 	}
-
 }
 
 func insertArticleTest(c *gin.Context) {
@@ -143,6 +143,7 @@ func insertNewArticle(c *gin.Context) {
 	var postJson ArticleAllSteps
 	if err := c.ShouldBindJSON(&postJson); err != nil {
 		log.Printf("%+v", err)
+		fmt.Printf("%+v", err)
 		c.JSONP(http.StatusBadRequest, gin.H{
 			"message": err.Error(),
 		})
@@ -281,6 +282,7 @@ func NewHTTPServer() {
 			"GET",
 			"PUT",
 			"DELETE",
+			"OPTIONS",
 		},
 	}))
 	r.GET("/init", DBInit)
@@ -301,6 +303,9 @@ func NewHTTPServer() {
 
 	r.GET("/", hello)
 	r.GET("/swagger/*any", ginSwaggerDoc())
+
+	r.OPTIONS("/articles", hello)
+	r.OPTIONS("/articles/:article_id", hello)
 
 	r.Run()
 }
