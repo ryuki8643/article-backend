@@ -304,8 +304,5 @@ func NewHTTPServer() {
 	r.GET("/", hello)
 	r.GET("/swagger/*any", ginSwaggerDoc())
 
-	r.OPTIONS("/articles", hello)
-	r.OPTIONS("/articles/:article_id", hello)
-
 	r.Run()
 }
