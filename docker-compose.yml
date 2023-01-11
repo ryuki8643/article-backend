@@ -26,7 +26,7 @@ services:
       POSTGRES_PASSWORD: gNeqz9FWh0szcHpVz7Umvgf1NUs578uk
     ports:
       - "5432:5432"
-    container_name: postgres
+    container_name: postgres22
     volumes:
       - pgwebdb-data:/var/lib/postgresql/data
     tty: true

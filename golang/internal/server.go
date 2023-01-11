@@ -268,6 +268,14 @@ func NewHTTPServer() {
 			"http://localhost:3000",
 			"https://step-navi.web.app",
 		},
+		AllowHeaders: []string{
+			"Access-Control-Allow-Credentials",
+			"Access-Control-Allow-Headers",
+			"Content-Type",
+			"Content-Length",
+			"Accept-Encoding",
+			"Authorization",
+		},
 		AllowMethods: []string{
 			"POST",
 			"GET",
